@@ -1,4 +1,17 @@
-print("🔥 NEW VERSION LOADED 🔥")
+def main():
+    app = ApplicationBuilder().token(TOKEN).build()
+
+    print("🔥 NEW VERSION LOADED 🔥")
+    print("🤖 Bot Running...")
+
+    # handlers here
+    app.add_handler(...)
+
+    app.run_polling()   # ✅ ONLY THIS
+
+if __name__ == "__main__":
+    main()
+
 import os, json, random
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
