@@ -11,9 +11,9 @@ import openai
 from langdetect import detect  # to detect language
 
 # ---------- CONFIG ----------
-TOKEN = os.getenv("BOT_TOKEN")
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-QUIZ_INTERVAL = int(os.getenv("QUIZ_INTERVAL", 600))
+TOKEN = os.environ.get("BOT_TOKEN")
+OPENAI_KEY = os.environ.get("OPENAI_API_KEY")
+QUIZ_INTERVAL = int(os.environ.get("QUIZ_INTERVAL", 600))
 
 openai.api_key = OPENAI_KEY
 DATA_FILE = "data.json"
