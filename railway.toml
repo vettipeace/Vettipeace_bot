@@ -2,7 +2,7 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "python mybot.py"
+startCommand = startCommand = "python src/mybot.py"
 
 [env]
 # Do NOT put tokens here! Leave blank, add in Railway Dashboard
