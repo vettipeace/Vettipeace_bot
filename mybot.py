@@ -1,3 +1,4 @@
+print("🔥 NEW VERSION LOADED 🔥")
 import os, json, random
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
