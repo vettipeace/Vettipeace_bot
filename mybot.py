@@ -1,20 +1,7 @@
-def main():
-    app = ApplicationBuilder().token(TOKEN).build()
-
-    print("🔥 NEW VERSION LOADED 🔥")
-    print("🤖 Bot Running...")
-
-    # handlers here
-    app.add_handler(...)
-
-    app.run_polling()   # ✅ ONLY THIS
-
-if __name__ == "__main__":
-    main()
+print("🔥 FINAL VERSION WORKING 🔥")
 
 import os, json, random
-from datetime import datetime
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
     ContextTypes, CallbackQueryHandler, filters
@@ -46,6 +33,9 @@ data = load()
 
 # ================= WELCOME =================
 async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.new_chat_members:
+        return
+
     for user in update.message.new_chat_members:
         name = user.first_name
         username = f"@{user.username}" if user.username else "No username"
@@ -64,9 +54,12 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ================= RULES =================
 async def rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    q = update.callback_query
-    await q.answer()
-    await q.edit_message_text(
+    query = update.callback_query
+    if not query:
+        return
+    await query.answer()
+
+    await query.edit_message_text(
         "📜 *Group Rules*\n"
         "1️⃣ No 18+ content\n"
         "2️⃣ No spam\n"
@@ -78,6 +71,9 @@ async def rules(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ================= AI CHAT =================
 async def ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
+
     if update.message.text.startswith("/"):
         return
 
@@ -87,8 +83,8 @@ async def ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
             messages=[{"role": "user", "content": update.message.text}]
         )
         await update.message.reply_text(res.choices[0].message.content)
-    except:
-        pass
+    except Exception as e:
+        print("AI Error:", e)
 
 # ================= WARN SYSTEM =================
 def add_warn(chat, user):
@@ -118,6 +114,7 @@ async def removewarn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.reply_to_message.from_user
     chat = str(update.effective_chat.id)
 
+    data.setdefault("warns", {}).setdefault(chat, {})
     data["warns"][chat][str(user.id)] = 0
     save(data)
 
@@ -131,7 +128,10 @@ async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.reply_to_message.from_user
     reason = " ".join(context.args) if context.args else "No reason"
 
-    await update.effective_chat.ban_member(user.id)
+    try:
+        await update.effective_chat.ban_member(user.id)
+    except:
+        pass
 
     await update.message.reply_text(
         f"🚫 Banned {user.first_name}\nReason: {reason}"
@@ -144,14 +144,21 @@ BAD = [
     "pm","dm","private chat","private message","direct chat","direct message",
     "punda","sunni","potta","thevudiya","thayoli","oombu","nudity","inbox","thevidya","ummbu","gommala","ommala","mairu","thayali"
 ]
+
 async def filter_bad(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
+
     msg = update.message.text.lower()
     chat = str(update.effective_chat.id)
     user = update.effective_user
 
     for w in BAD:
         if w in msg:
-            await update.message.delete()
+            try:
+                await update.message.delete()
+            except:
+                pass
 
             warns = add_warn(chat, str(user.id))
 
@@ -168,6 +175,9 @@ async def guess(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🎯 Guess number (1-20)")
 
 async def check_guess(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
+
     if "num" in games:
         try:
             if int(update.message.text) == games["num"]:
@@ -182,7 +192,7 @@ words = ["apple","tiger","python","banana"]
 async def scramble(update: Update, context: ContextTypes.DEFAULT_TYPE):
     w = random.choice(words)
     games["word"] = w
-    sh = "".join(random.sample(w,len(w)))
+    sh = "".join(random.sample(w, len(w)))
     await update.message.reply_text(f"🔤 Unscramble: {sh}")
 
 # ================= LEADERBOARD =================
@@ -196,7 +206,7 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     scores = data.get("points", {}).get(chat, {})
 
     text = "🏆 Leaderboard:\n"
-    for u,s in sorted(scores.items(), key=lambda x:x[1], reverse=True):
+    for u, s in sorted(scores.items(), key=lambda x: x[1], reverse=True):
         text += f"{u}: {s}\n"
 
     await update.message.reply_text(text)
@@ -206,11 +216,14 @@ async def quiz(context: ContextTypes.DEFAULT_TYPE):
     try:
         res = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role":"user","content":"simple MCQ quiz"}]
+            messages=[{"role": "user", "content": "simple MCQ quiz"}]
         )
-        await context.bot.send_message(chat_id=context.job.chat_id, text="🧠 Quiz:\n"+res.choices[0].message.content)
-    except:
-        pass
+        await context.bot.send_message(
+            chat_id=context.job.chat_id,
+            text="🧠 Quiz:\n" + res.choices[0].message.content
+        )
+    except Exception as e:
+        print("Quiz Error:", e)
 
 async def startquiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
