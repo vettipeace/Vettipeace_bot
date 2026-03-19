@@ -1,4 +1,4 @@
-print("🔥 FINAL VERSION WORKING 🔥")
+print("🔥 VERSION V2 LOADED 🔥")
 
 import os, json, random
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
