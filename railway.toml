@@ -1,0 +1,11 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "python mybot.py"
+
+[env]
+# Do NOT put tokens here! Leave blank, add in Railway Dashboard
+BOT_TOKEN=
+OPENAI_API_KEY=
+QUIZ_INTERVAL=600
