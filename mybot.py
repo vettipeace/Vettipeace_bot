@@ -21,7 +21,7 @@ BAD_WORDS = [
     "cock","pussy","slut","whore","rape","masturbate","boobs","penis",
     "pm","dm","private chat","private message","direct chat","direct message",
     "punda","sunni","potta","thevudiya","thayoli","oombu","nudity","inbox","thevidya",
-    "ummbu","gommala","ommala","kotta","badu","pvrt","ummbi","thayali","aatha","otha"
+    "ummbu","gommala","ommala","kotta","badu","pvrt","ummbi","thayali","aatha","otha","kuthi"
 ]
 
 openai.api_key = OPENAI_API_KEY
