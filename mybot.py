@@ -1,3 +1,4 @@
+print("🔥 GOD SECURITY BOT LOADED 🔥")
 import json
 import asyncio
 from datetime import datetime, timedelta
