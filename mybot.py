@@ -317,6 +317,7 @@ async def startquiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
+    # COMMANDS
     app.add_handler(CommandHandler("warn", warn))
     app.add_handler(CommandHandler("removewarn", removewarn))
     app.add_handler(CommandHandler("ban", ban))
@@ -324,11 +325,17 @@ def main():
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(CommandHandler("startquiz", startquiz))
 
+    # BUTTON
     app.add_handler(CallbackQueryHandler(button_handler))
 
+    # MESSAGES
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, filter_bad))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_answer))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, ai))
 
     print("🚀 GOD BOT RUNNING...")
     app.run_polling()
+
+
+if __name__ == "__main__":
+    main()
