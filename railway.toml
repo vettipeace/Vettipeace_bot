@@ -5,5 +5,5 @@ name = "pro-max-bot"
 image = "python"
 
 [env]
-BOT_TOKEN = "your_bot_token"
-OPENAI_API_KEY = "your_openai_key"
+BOT_TOKEN = ""
+OPENAI_API_KEY = ""
