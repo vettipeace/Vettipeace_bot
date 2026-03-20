@@ -1,11 +1,9 @@
-[build]
-builder = "NIXPACKS"
+[project]
+name = "pro-max-bot"
 
-[deploy]
-startCommand = "python mybot.py"
+[build]
+image = "python"
 
 [env]
-# Add these in Railway dashboard:
-# BOT_TOKEN
-# OPENAI_API_KEY
-# QUIZ_INTERVAL
+BOT_TOKEN = "your_bot_token"
+OPENAI_API_KEY = "your_openai_key"
