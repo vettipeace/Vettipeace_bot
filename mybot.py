@@ -1,4 +1,4 @@
-print("🔥 GOD LEVEL BOT STARTED 🔥")
+print("🔥 PRO MAX BOT STARTED 🔥")
 
 import os, json, asyncio, time
 from collections import defaultdict
@@ -9,12 +9,12 @@ from telegram.ext import (
 )
 from openai import AsyncOpenAI
 
+# ================= CONFIG =================
 TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-QUIZ_INTERVAL = 600
+QUIZ_INTERVAL = 600  # 10 minutes
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-
 DATA_FILE = "data.json"
 
 # ================= DATA =================
@@ -31,7 +31,7 @@ def save():
 
 data = load()
 
-# ================= ADMIN =================
+# ================= ADMIN CHECK =================
 async def is_admin(update):
     member = await update.effective_chat.get_member(update.effective_user.id)
     return member.status in ["administrator", "creator"]
@@ -41,8 +41,8 @@ async def auto_delete(msg):
     try:
         await asyncio.sleep(120)
         await msg.delete()
-    except:
-        pass
+    except Exception as e:
+        print("AUTO DELETE ERROR:", e)
 
 # ================= ANTI SPAM =================
 user_msgs = defaultdict(list)
@@ -50,31 +50,23 @@ user_msgs = defaultdict(list)
 async def anti_spam(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if await is_admin(update):
         return False
-
     user_id = update.effective_user.id
     now = time.time()
-
     user_msgs[user_id] = [t for t in user_msgs[user_id] if now - t < 5]
     user_msgs[user_id].append(now)
-
     if len(user_msgs[user_id]) > 5:
         try:
             await update.message.delete()
         except:
             pass
-
         warns = add_warn(str(update.effective_chat.id), user_id)
-
         m = await update.effective_chat.send_message(
             f"⚠️ Spam detected ({update.effective_user.first_name})\nWarns: {warns}/3"
         )
-        asyncio.create_task(auto_delete(m))
-
+        context.application.create_task(auto_delete(m))
         if warns >= 3:
             await update.effective_chat.ban_member(user_id)
-
         return True
-
     return False
 
 # ================= WELCOME =================
@@ -83,7 +75,6 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
         name = user.first_name
         username = f"@{user.username}" if user.username else "No username"
         chat_id = update.effective_chat.id
-
         text = (
             f"🔮 Welcome to Bun Butter Jam!\n"
             f"👤 Name: {name}\n"
@@ -95,15 +86,13 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"⚠️ Follow admin instructions\n"
             "If you have any issues, contact admin."
         )
-
         msg = await update.message.reply_text(text)
         context.application.create_task(auto_delete(msg))
 
-# ================= WARN =================
+# ================= WARN SYSTEM =================
 def add_warn(chat, user):
     chat = str(chat)
     user = str(user)
-
     data["warns"].setdefault(chat, {})
     data["warns"][chat][user] = data["warns"][chat].get(user, 0) + 1
     save()
@@ -112,132 +101,105 @@ def add_warn(chat, user):
 async def warn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         return
-
     if not update.message.reply_to_message:
         return
-
     user = update.message.reply_to_message.from_user
     chat = str(update.effective_chat.id)
-
     warns = add_warn(chat, user.id)
-
     kb = [[InlineKeyboardButton("✅ Remove Warn", callback_data=f"removewarn_{user.id}")]]
-
     msg = await update.message.reply_text(
-        f"⚠️ {user.first_name} warned\n"
-        f"Reason: against the group rules\n"
-        f"Warns: {warns}/3",
+        f"⚠️ {user.first_name} warned\nReason: against the group rules\nWarns: {warns}/3",
         reply_markup=InlineKeyboardMarkup(kb)
     )
-
     context.application.create_task(auto_delete(msg))
-
     if warns >= 3:
         ban_msg = await update.effective_chat.send_message(
             f"🚫 {user.first_name} auto banned (3 warns)"
         )
         await update.effective_chat.ban_member(user.id)
-        context.application.create_task(auto_delete(msg))
+        context.application.create_task(auto_delete(ban_msg))
 
 # ================= REMOVE WARN =================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
     if not await is_admin(update):
         return await query.answer("Admin only!", show_alert=True)
-
     user_id = query.data.split("_")[1]
     chat = str(update.effective_chat.id)
-
     if chat in data["warns"] and user_id in data["warns"][chat]:
         data["warns"][chat][user_id] = 0
         save()
-
     msg = await query.edit_message_text("✅ Warn removed by admin")
     context.application.create_task(auto_delete(msg))
 
-# ================= UN WARN =================
 async def removewarn(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         return
-
     if not update.message.reply_to_message:
         return await update.message.reply_text("Reply to a user to remove warn")
-
     user = update.message.reply_to_message.from_user
     chat = str(update.effective_chat.id)
-
     if chat in data["warns"] and str(user.id) in data["warns"][chat]:
         data["warns"][chat][str(user.id)] = 0
         save()
-
     msg = await update.message.reply_text(f"✅ Warn removed for {user.first_name}")
     context.application.create_task(auto_delete(msg))
 
-# ================= BAN =================
+# ================= BAN / UNBAN =================
 async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         return
-
     user = update.message.reply_to_message.from_user
     await update.effective_chat.ban_member(user.id)
-
     msg = await update.message.reply_text("🚫 User banned")
     context.application.create_task(auto_delete(msg))
 
-# ================= UNBAN =================
 async def unban(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         return
-
     user = update.message.reply_to_message.from_user
     await update.effective_chat.unban_member(user.id)
-
     msg = await update.message.reply_text("✅ User unbanned")
     context.application.create_task(auto_delete(msg))
 
-# ================= BAD WORD =================
-BAD = ["sex","porn","xxx","nude","fuck","ass","bitch","cunt","dick","pm","dm"]
+# ================= BAD WORD FILTER =================
+BAD = [
+    "sex","porn","xxx","nude","fuck","ass","bitch","cunt","dick",
+    "cock","pussy","slut","whore","rape","masturbate","boobs","penis",
+    "pm","dm","private chat","private message","direct chat","direct message",
+    "punda","sunni","potta","thevudiya","thayoli","oombu","nudity","inbox","thevidya","ummbu","gommala","ommala","kotta","badu","pvrt","ummbi","thayali"
+]
 
 async def filter_bad(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if await is_admin(update):
         return
-
     if not update.message.text:
         return
-
     if await anti_spam(update, context):
         return
-
     msg = update.message.text.lower()
     user = update.effective_user
     chat = str(update.effective_chat.id)
-
     for w in BAD:
         if w in msg:
             try:
                 await update.message.delete()
             except:
                 pass
-
             warns = add_warn(chat, user.id)
-
             m = await update.effective_chat.send_message(
                 f"⚠️ {user.first_name}\nReason: against the group rules\nWarns: {warns}/3"
             )
-            context.application.create_task(auto_delete(msg))
-
+            context.application.create_task(auto_delete(m))
             if warns >= 3:
                 await update.effective_chat.ban_member(user.id)
-
             return
 
-# ================= AI =================
+# ================= AI CHAT =================
 async def ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.text or update.message.text.startswith("/"):
         return
-
     try:
         res = await client.chat.completions.create(
             model="gpt-4o-mini",
@@ -251,36 +213,27 @@ async def ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def quiz(context: ContextTypes.DEFAULT_TYPE):
     try:
         chat_id = context.job.chat_id
-
         res = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role":"user","content":"simple MCQ with 4 options and Answer:"}]
         )
-
         text = res.choices[0].message.content
         answer = text.split("Answer:")[-1].strip().lower()
-
         data["quiz"][str(chat_id)] = answer
         save()
-
         await context.bot.send_message(chat_id, "🧠 Quiz:\n" + text)
-
     except Exception as e:
         print("QUIZ ERROR:", e)
 
 async def check_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = str(update.effective_chat.id)
-
     if chat not in data["quiz"]:
         return
-
     if data["quiz"][chat] in update.message.text.lower():
         user = str(update.effective_user.id)
-
         data["points"].setdefault(chat, {})
         data["points"][chat][user] = data["points"][chat].get(user, 0) + 5
         save()
-
         await update.message.reply_text("🎉 Correct! +5 points")
         del data["quiz"][chat]
 
@@ -288,30 +241,25 @@ async def check_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat = str(update.effective_chat.id)
     scores = data["points"].get(chat, {})
-
     text = "🏆 Leaderboard\n"
-
-    for u, s in sorted(scores.items(), key=lambda x: x[1], reverse=True):
+    for u, s in sorted(scores.items(), key=lambda x:x[1], reverse=True):
         try:
             member = await context.bot.get_chat_member(chat, int(u))
             name = member.user.first_name
         except:
             name = u
-
-        text += f"{name}: {s}\n"
-
+        msg_text = f"{name}: {s}\n"
+        text += msg_text
     msg = await update.message.reply_text(text)
-    asyncio.create_task(auto_delete(msg))
+    context.application.create_task(auto_delete(msg))
 
 # ================= START QUIZ =================
 async def startquiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.job_queue:
         return await update.message.reply_text("❌ Install job-queue")
-
     context.job_queue.run_repeating(quiz, QUIZ_INTERVAL, chat_id=update.effective_chat.id)
-
     msg = await update.message.reply_text("✅ Quiz started (10 min)")
-    asyncio.create_task(auto_delete(msg))
+    context.application.create_task(auto_delete(msg))
 
 # ================= MAIN =================
 def main():
@@ -325,18 +273,18 @@ def main():
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(CommandHandler("startquiz", startquiz))
 
-    # BUTTON
+    # BUTTON HANDLER
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    # WELCOME (🔥 YOU MISSED THIS BEFORE)
+    # WELCOME
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome))
 
-   # MESSAGES
+    # MESSAGE HANDLERS
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, filter_bad))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_answer))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, ai))
 
-    print("🚀 GOD BOT RUNNING...")
+    print("🚀 PRO MAX BOT RUNNING...")
     app.run_polling()
 
 
