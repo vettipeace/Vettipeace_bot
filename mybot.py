@@ -270,7 +270,7 @@ def main():
     app.add_handler(CommandHandler("warn", warn))
     app.add_handler(CommandHandler("removewarn", removewarn))
 
-    app.add_handler(CommandHandler  ("ban", ban))
+app.add_handler(CommandHandler ("ban", ban))
     app.add_handler(CommandHandler("unban", unban))
     app.add_handler(CommandHandler("leaderboard", leaderboard))
     app.add_handler(CommandHandler("startquiz", startquiz))
