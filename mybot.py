@@ -97,7 +97,7 @@ async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         msg = await update.message.reply_text(text)
-        asyncio.create_task(auto_delete(msg))
+        context.application.create_task(auto_delete(msg))
 
 # ================= WARN =================
 def add_warn(chat, user):
@@ -130,14 +130,14 @@ async def warn(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=InlineKeyboardMarkup(kb)
     )
 
-    asyncio.create_task(auto_delete(msg))
+    context.application.create_task(auto_delete(msg))
 
     if warns >= 3:
         ban_msg = await update.effective_chat.send_message(
             f"🚫 {user.first_name} auto banned (3 warns)"
         )
         await update.effective_chat.ban_member(user.id)
-        asyncio.create_task(auto_delete(ban_msg))
+        context.application.create_task(auto_delete(msg))
 
 # ================= REMOVE WARN =================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -155,7 +155,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save()
 
     msg = await query.edit_message_text("✅ Warn removed by admin")
-    asyncio.create_task(auto_delete(msg))
+    context.application.create_task(auto_delete(msg))
 
 # ================= UN WARN =================
 async def removewarn(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -173,7 +173,7 @@ async def removewarn(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save()
 
     msg = await update.message.reply_text(f"✅ Warn removed for {user.first_name}")
-    asyncio.create_task(auto_delete(msg))
+    context.application.create_task(auto_delete(msg))
 
 # ================= BAN =================
 async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -184,7 +184,7 @@ async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.ban_member(user.id)
 
     msg = await update.message.reply_text("🚫 User banned")
-    asyncio.create_task(auto_delete(msg))
+    context.application.create_task(auto_delete(msg))
 
 # ================= UNBAN =================
 async def unban(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -195,7 +195,7 @@ async def unban(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.unban_member(user.id)
 
     msg = await update.message.reply_text("✅ User unbanned")
-    asyncio.create_task(auto_delete(msg))
+    context.application.create_task(auto_delete(msg))
 
 # ================= BAD WORD =================
 BAD = ["sex","porn","xxx","nude","fuck","ass","bitch","cunt","dick","pm","dm"]
@@ -226,7 +226,7 @@ async def filter_bad(update: Update, context: ContextTypes.DEFAULT_TYPE):
             m = await update.effective_chat.send_message(
                 f"⚠️ {user.first_name}\nReason: against the group rules\nWarns: {warns}/3"
             )
-            asyncio.create_task(auto_delete(m))
+            context.application.create_task(auto_delete(msg))
 
             if warns >= 3:
                 await update.effective_chat.ban_member(user.id)
@@ -328,7 +328,10 @@ def main():
     # BUTTON
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    # MESSAGES
+    # WELCOME (🔥 YOU MISSED THIS BEFORE)
+    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome))
+
+   # MESSAGES
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, filter_bad))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_answer))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, ai))
